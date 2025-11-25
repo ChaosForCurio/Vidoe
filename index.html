@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vidoe - AI Video Generator</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button.primary {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button.primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-area {
+            margin-top: 2rem;
+            text-align: center;
+            display: none;
+        }
+
+        video {
+            max-width: 100%;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--accent);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .api-key-section {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Vidoe</h1>
+        <p class="subtitle">CPU-Optimized AI Video Generation</p>
+    </header>
+
+    <div class="card">
+        <div class="api-key-section">
+            <div class="form-group">
+                <label for="apiKey">API Key</label>
+                <input type="password" id="apiKey" placeholder="Enter your API Key" value="RTn9iVMzEymdRc_cG60lIbbsERjGz0ZQzlBegTZvI">
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('txt2vid')">Text to Video</button>
+            <button class="tab" onclick="switchTab('img2vid')">Image to Video</button>
+        </div>
+
+        <div id="txt2vid-form">
+            <div class="form-group">
+                <label for="prompt">Prompt</label>
+                <input type="text" id="prompt" placeholder="A cyberpunk cat running in the rain...">
+            </div>
+            <div class="form-group">
+                <label for="numFrames">Number of Frames</label>
+                <input type="number" id="numFrames" value="16" min="8" max="32">
+            </div>
+            <button class="primary" onclick="generateTxt2Vid()">Generate Video</button>
+        </div>
+
+        <div id="img2vid-form" class="hidden">
+            <div class="form-group">
+                <label for="imageInput">Upload Image</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="motionBucket">Motion Bucket ID (1-255)</label>
+                <input type="number" id="motionBucket" value="127" min="1" max="255">
+            </div>
+            <button class="primary" onclick="generateImg2Vid()">Generate Video</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating video... This may take a few minutes on CPU.</p>
+        </div>
+
+        <div class="result-area" id="result">
+            <h3>Generated Video</h3>
+            <video id="videoPlayer" controls autoplay loop></video>
+            <p style="margin-top: 1rem;">
+                <a id="downloadLink" href="#" download="video.mp4" style="color: var(--accent);">Download Video</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = window.location.origin; // Assumes served from same origin
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#txt2vid-form, #img2vid-form').forEach(f => f.classList.add('hidden'));
+        
+        if (tab === 'txt2vid') {
+            document.querySelector('.tab:nth-child(1)').classList.add('active');
+            document.getElementById('txt2vid-form').classList.remove('hidden');
+        } else {
+            document.querySelector('.tab:nth-child(2)').classList.add('active');
+            document.getElementById('img2vid-form').classList.remove('hidden');
+        }
+    }
+
+    async function generateTxt2Vid() {
+        const apiKey = document.getElementById('apiKey').value;
+        const prompt = document.getElementById('prompt').value;
+        const numFrames = document.getElementById('numFrames').value;
+
+        if (!prompt) return alert('Please enter a prompt');
+
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('prompt', prompt);
+        formData.append('num_frames', numFrames);
+
+        try {
+            const response = await fetch(`${API_BASE}/txt2vid`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey
+                },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            const blob = await response.blob();
+            displayVideo(blob);
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function generateImg2Vid() {
+        const apiKey = document.getElementById('apiKey').value;
+        const imageInput = document.getElementById('imageInput');
+        const motionBucket = document.getElementById('motionBucket').value;
+
+        if (!imageInput.files[0]) return alert('Please select an image');
+
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('motion_bucket_id', motionBucket);
+
+        try {
+            const response = await fetch(`${API_BASE}/img2vid`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey
+                },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            const blob = await response.blob();
+            displayVideo(blob);
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function setLoading(isLoading) {
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const buttons = document.querySelectorAll('button');
+
+        if (isLoading) {
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            buttons.forEach(b => b.disabled = true);
+        } else {
+            loading.style.display = 'none';
+            buttons.forEach(b => b.disabled = false);
+        }
+    }
+
+    function displayVideo(blob) {
+        const url = URL.createObjectURL(blob);
+        const video = document.getElementById('videoPlayer');
+        const download = document.getElementById('downloadLink');
+        const result = document.getElementById('result');
+
+        video.src = url;
+        download.href = url;
+        result.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
