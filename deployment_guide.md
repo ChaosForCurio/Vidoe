@@ -18,6 +18,7 @@ This guide details how to deploy the CPU-friendly video generation API on Northf
 2. Select **"Build & Deploy"** (Combined service).
 3. **Service Name**: `video-api`.
 4. **Repository**: Connect your GitHub and select this repository.
+   - **Important**: If you see a warning about Northflank not being installed, click the link to **"Install Northflank"** on your GitHub account/organization and select this repository. This is required for automatic builds.
 5. **Branch**: `main` (or your working branch).
 6. **Build Type**: `Dockerfile`.
    - **Context**: `/` (Root directory).
@@ -31,9 +32,14 @@ This guide details how to deploy the CPU-friendly video generation API on Northf
 ## Step 4: Environment Variables
 1. Go to **"Environment"** or **"Runtime Variables"**.
 2. Add the following variables:
-   - `MODEL_ID_T2V`: `cerspense/zeroscope_v2_576w`
-   - `MODEL_ID_I2V`: `stabilityai/stable-video-diffusion-img2vid-xt`
-   - `API_KEY`: `your-secret-master-key` (Optional, if you want a master override)
+   - `MODEL_NAME`: `cerspense/zeroscope_v2_576w` (or your preferred model)
+   - `API_KEY`: `mysecretapikey123` (Required for access)
+   - `RATE_LIMIT`: `1000`
+   - `MAX_FRAMES`: `32`
+   - `OUTPUT_RESOLUTION`: `256`
+   - `ALLOWED_ORIGIN`: `*` (or your frontend URL)
+   - `LOGGING`: `true`
+   - `BASE_URL`: `https://your-service.onrender.com`
 
 ## Step 5: Networking & Ports
 1. Under **"Networking"**, ensure Port `8000` is exposed.
