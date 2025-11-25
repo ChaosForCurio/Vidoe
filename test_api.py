@@ -1,14 +1,3 @@
-import requests
-import sys
-import os
-
-API_URL = "http://localhost:8000" # Change to your Northflank URL
-API_KEY = "RTn9iVMzEymdRc_cG60lIbbsERjGz0ZQzlBegTZvI"
-
-def test_health():
-    print("Testing /health...")
-    try:
-        response = requests.get(f"{API_URL}/health")
         data = response.json()
         print(data)
         if "Lightricks/LTX-Video" in data.get("config", {}).get("model_id", ""):
@@ -68,5 +57,5 @@ if __name__ == "__main__":
     
     test_health()
     # Uncomment to run generation tests (warning: slow on CPU)
-    # test_txt2vid()
+    test_txt2vid()
     # test_img2vid()

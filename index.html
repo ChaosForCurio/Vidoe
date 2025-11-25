@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -167,14 +168,19 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .hidden {
             display: none;
         }
-        
+
         .api-key-section {
             margin-bottom: 2rem;
             padding-bottom: 2rem;
@@ -182,174 +188,190 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <header>
-        <h1>Vidoe</h1>
-        <p class="subtitle">CPU-Optimized AI Video Generation</p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>Vidoe</h1>
+            <p class="subtitle">AI Video Generation Powered by LTXVideo</p>
+        </header>
 
-    <div class="card">
-        <div class="api-key-section">
-            <div class="form-group">
-                <label for="apiKey">API Key</label>
-                <input type="password" id="apiKey" placeholder="Enter your API Key" value="RTn9iVMzEymdRc_cG60lIbbsERjGz0ZQzlBegTZvI">
+        <div class="card">
+            <div class="api-key-section">
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <input type="password" id="apiKey" placeholder="Enter your API Key"
+                        value="RTn9iVMzEymdRc_cG60lIbbsERjGz0ZQzlBegTZvI">
+                </div>
             </div>
-        </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('txt2vid')">Text to Video</button>
-            <button class="tab" onclick="switchTab('img2vid')">Image to Video</button>
-        </div>
-
-        <div id="txt2vid-form">
-            <div class="form-group">
-                <label for="prompt">Prompt</label>
-                <input type="text" id="prompt" placeholder="A cyberpunk cat running in the rain...">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('txt2vid')">Text to Video</button>
+                <button class="tab" onclick="switchTab('img2vid')">Image to Video</button>
             </div>
-            <div class="form-group">
-                <label for="numFrames">Number of Frames</label>
-                <input type="number" id="numFrames" value="16" min="8" max="32">
-            </div>
-            <button class="primary" onclick="generateTxt2Vid()">Generate Video</button>
-        </div>
 
-        <div id="img2vid-form" class="hidden">
-            <div class="form-group">
-                <label for="imageInput">Upload Image</label>
-                <input type="file" id="imageInput" accept="image/*">
+            <div id="txt2vid-form">
+                <div class="form-group">
+                    <label for="prompt">Prompt</label>
+                    <input type="text" id="prompt" placeholder="A cinematic shot of a cyberpunk city...">
+                </div>
+                <div class="form-group">
+                    <label for="frames-txt">Number of Frames</label>
+                    <input type="number" id="frames-txt" value="121" min="1" max="200">
+                </div>
+                <div class="form-group">
+                    <label for="steps-txt">Inference Steps</label>
+                    <input type="number" id="steps-txt" value="25" min="1" max="50">
+                </div>
+                <button class="primary" onclick="generateVideo('txt2vid')">Generate Video</button>
             </div>
-            <div class="form-group">
-                <label for="motionBucket">Motion Bucket ID (1-255)</label>
-                <input type="number" id="motionBucket" value="127" min="1" max="255">
+
+            <div id="img2vid-form" class="hidden">
+                <div class="form-group">
+                    <label for="image">Upload Image</label>
+                    <input type="file" id="image" accept="image/*" style="color: white;">
+                </div>
+                <div class="form-group">
+                    <label for="img-prompt">Prompt (Optional)</label>
+                    <input type="text" id="img-prompt" placeholder="Camera pans right...">
+                </div>
+                <div class="form-group">
+                    <label for="frames-img">Number of Frames</label>
+                    <input type="number" id="frames-img" value="121" min="1" max="200">
+                </div>
+                <div class="form-group">
+                    <label for="steps-img">Inference Steps</label>
+                    <input type="number" id="steps-img" value="25" min="1" max="50">
+                </div>
+                <button class="primary" onclick="generateVideo('img2vid')">Generate Video</button>
             </div>
-            <button class="primary" onclick="generateImg2Vid()">Generate Video</button>
-        </div>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Generating video... This may take a few minutes on CPU.</p>
-        </div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating your video... This may take a few minutes.</p>
+            </div>
 
-        <div class="result-area" id="result">
-            <h3>Generated Video</h3>
-            <video id="videoPlayer" controls autoplay loop></video>
-            <p style="margin-top: 1rem;">
-                <a id="downloadLink" href="#" download="video.mp4" style="color: var(--accent);">Download Video</a>
-            </p>
+            <div id="result" class="result-area">
+                <h3>Generated Video</h3>
+                <video id="videoPlayer" controls autoplay loop></video>
+                <br><br>
+                <a id="downloadLink" class="tab active" style="text-decoration: none; display: inline-block;"
+                    download="video.mp4">Download Video</a>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const API_BASE = window.location.origin; // Assumes served from same origin
+    <script>
+        let currentTab = 'txt2vid';
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#txt2vid-form, #img2vid-form').forEach(f => f.classList.add('hidden'));
-        
-        if (tab === 'txt2vid') {
-            document.querySelector('.tab:nth-child(1)').classList.add('active');
-            document.getElementById('txt2vid-form').classList.remove('hidden');
-        } else {
-            document.querySelector('.tab:nth-child(2)').classList.add('active');
-            document.getElementById('img2vid-form').classList.remove('hidden');
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'txt2vid') {
+                document.getElementById('txt2vid-form').classList.remove('hidden');
+                document.getElementById('img2vid-form').classList.add('hidden');
+            } else {
+                document.getElementById('txt2vid-form').classList.add('hidden');
+                document.getElementById('img2vid-form').classList.remove('hidden');
+            }
         }
-    }
 
-    async function generateTxt2Vid() {
-        const apiKey = document.getElementById('apiKey').value;
-        const prompt = document.getElementById('prompt').value;
-        const numFrames = document.getElementById('numFrames').value;
+        async function generateVideo(type) {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('Please enter an API Key');
+                return;
+            }
 
-        if (!prompt) return alert('Please enter a prompt');
+            setLoading(true);
 
-        setLoading(true);
+            try {
+                const formData = new FormData();
 
-        const formData = new FormData();
-        formData.append('prompt', prompt);
-        formData.append('num_frames', numFrames);
+                if (type === 'txt2vid') {
+                    const prompt = document.getElementById('prompt').value;
+                    const frames = document.getElementById('frames-txt').value;
+                    const steps = document.getElementById('steps-txt').value;
 
-        try {
-            const response = await fetch(`${API_BASE}/txt2vid`, {
-                method: 'POST',
-                headers: {
-                    'X-API-Key': apiKey
-                },
-                body: formData
-            });
+                    if (!prompt) {
+                        alert('Please enter a prompt');
+                        setLoading(false);
+                        return;
+                    }
 
-            if (!response.ok) throw new Error(await response.text());
+                    formData.append('prompt', prompt);
+                    formData.append('num_frames', frames);
+                    formData.append('num_inference_steps', steps);
+                } else {
+                    const imageFile = document.getElementById('image').files[0];
+                    const prompt = document.getElementById('img-prompt').value;
+                    const frames = document.getElementById('frames-img').value;
+                    const steps = document.getElementById('steps-img').value;
 
-            const blob = await response.blob();
-            displayVideo(blob);
-        } catch (error) {
-            alert('Error: ' + error.message);
-        } finally {
-            setLoading(false);
+                    if (!imageFile) {
+                        alert('Please upload an image');
+                        setLoading(false);
+                        return;
+                    }
+
+                    formData.append('image', imageFile);
+                    if (prompt) formData.append('prompt', prompt);
+                    formData.append('num_frames', frames);
+                    formData.append('num_inference_steps', steps);
+                }
+
+                const response = await fetch(`http://localhost:8001/${type}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Generation failed');
+                }
+
+                const blob = await response.blob();
+                displayVideo(blob);
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                setLoading(false);
+            }
         }
-    }
 
-    async function generateImg2Vid() {
-        const apiKey = document.getElementById('apiKey').value;
-        const imageInput = document.getElementById('imageInput');
-        const motionBucket = document.getElementById('motionBucket').value;
+        function setLoading(isLoading) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const buttons = document.querySelectorAll('button');
 
-        if (!imageInput.files[0]) return alert('Please select an image');
-
-        setLoading(true);
-
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('motion_bucket_id', motionBucket);
-
-        try {
-            const response = await fetch(`${API_BASE}/img2vid`, {
-                method: 'POST',
-                headers: {
-                    'X-API-Key': apiKey
-                },
-                body: formData
-            });
-
-            if (!response.ok) throw new Error(await response.text());
-
-            const blob = await response.blob();
-            displayVideo(blob);
-        } catch (error) {
-            alert('Error: ' + error.message);
-        } finally {
-            setLoading(false);
+            if (isLoading) {
+                loading.style.display = 'block';
+                result.style.display = 'none';
+                buttons.forEach(b => b.disabled = true);
+            } else {
+                loading.style.display = 'none';
+                buttons.forEach(b => b.disabled = false);
+            }
         }
-    }
 
-    function setLoading(isLoading) {
-        const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
-        const buttons = document.querySelectorAll('button');
+        function displayVideo(blob) {
+            const url = URL.createObjectURL(blob);
+            const video = document.getElementById('videoPlayer');
+            const download = document.getElementById('downloadLink');
+            const result = document.getElementById('result');
 
-        if (isLoading) {
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            buttons.forEach(b => b.disabled = true);
-        } else {
-            loading.style.display = 'none';
-            buttons.forEach(b => b.disabled = false);
+            video.src = url;
+            download.href = url;
+            result.style.display = 'block';
         }
-    }
-
-    function displayVideo(blob) {
-        const url = URL.createObjectURL(blob);
-        const video = document.getElementById('videoPlayer');
-        const download = document.getElementById('downloadLink');
-        const result = document.getElementById('result');
-
-        video.src = url;
-        download.href = url;
-        result.style.display = 'block';
-    }
-</script>
-
+    </script>
 </body>
+
 </html>

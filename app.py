@@ -29,11 +29,22 @@ app = FastAPI(title="LTXVideo Generator")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[ALLOWED_ORIGIN],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    with open("index.html", "r") as f:
+        return f.read()
+
+# Mount static files if needed (e.g. for css/js if separated)
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Global model cache
 models = {}
@@ -75,6 +86,7 @@ async def health_check():
     return {
         "status": "healthy", 
         "models_loaded": list(models.keys()),
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
         "config": {
             "model_id": MODEL_ID,
             "max_frames": MAX_FRAMES_DEFAULT,
@@ -83,19 +95,22 @@ async def health_check():
     }
 
 @app.post("/txt2vid")
-async def text_to_video(prompt: str = Form(...), num_frames: int = Form(MAX_FRAMES_DEFAULT)):
+async def text_to_video(
+    prompt: str = Form(...), 
+    num_frames: int = Form(MAX_FRAMES_DEFAULT),
+    num_inference_steps: int = Form(25) # Default reduced to 25 for speed
+):
     try:
-        logger.info(f"Generating video for prompt: {prompt}")
+        logger.info(f"Generating video for prompt: {prompt} (Steps: {num_inference_steps})")
         pipe = load_model("t2v")
         
         # Inference
-        # LTXVideo specific parameters can be tuned here
         video_frames = pipe(
             prompt=prompt,
             width=OUTPUT_RESOLUTION_WIDTH,
             height=OUTPUT_RESOLUTION_HEIGHT,
             num_frames=num_frames,
-            num_inference_steps=50, # Default is usually 50
+            num_inference_steps=num_inference_steps,
         ).frames[0]
         
         # Save video
@@ -109,9 +124,14 @@ async def text_to_video(prompt: str = Form(...), num_frames: int = Form(MAX_FRAM
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/img2vid")
-async def image_to_video(image: UploadFile = File(...), prompt: str = Form(None), num_frames: int = Form(MAX_FRAMES_DEFAULT)):
+async def image_to_video(
+    image: UploadFile = File(...), 
+    prompt: str = Form(None), 
+    num_frames: int = Form(MAX_FRAMES_DEFAULT),
+    num_inference_steps: int = Form(25) # Default reduced to 25 for speed
+):
     try:
-        logger.info(f"Generating video from image")
+        logger.info(f"Generating video from image (Steps: {num_inference_steps})")
         pipe = load_model("i2v")
         
         # Read and process image
@@ -124,11 +144,11 @@ async def image_to_video(image: UploadFile = File(...), prompt: str = Form(None)
         # Inference
         video_frames = pipe(
             image=pil_image,
-            prompt=prompt if prompt else "", # LTX I2V can take a prompt
+            prompt=prompt if prompt else "", 
             width=OUTPUT_RESOLUTION_WIDTH,
             height=OUTPUT_RESOLUTION_HEIGHT,
             num_frames=num_frames,
-            num_inference_steps=50,
+            num_inference_steps=num_inference_steps,
         ).frames[0]
         
         # Save video
